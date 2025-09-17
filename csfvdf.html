@@ -1,0 +1,642 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Latte Music — Fixed & Improved</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+
+<style>
+  :root{
+    --glass: rgba(255,255,255,0.06);
+    --glass-2: rgba(255,255,255,0.04);
+    --accent: #1db954;
+    --bg1: #060606;
+    --bg2: #111316;
+  }
+  * { box-sizing: border-box; }
+  html,body { height:100%; margin:0; font-family:"Poppins",system-ui,Segoe UI,Roboto; background:radial-gradient(circle at 10% 10%, var(--bg2), var(--bg1)); color:#fff; overflow:hidden; }
+
+  /* App container (keeps everything inside viewport, no scroll) */
+  .app {
+    width: 940px; max-width:94vw;
+    height: calc(100vh - 28px);
+    margin:14px auto;
+    display:flex;
+    gap:20px;
+    align-items:flex-start;
+    justify-content:center;
+  }
+
+  /* Left column: search + results */
+  .left {
+    width: 380px;
+    display:flex;
+    flex-direction:column;
+    gap:12px;
+    align-items:stretch;
+  }
+
+  .search {
+    width:100%;
+    padding:14px 16px;
+    border-radius:14px;
+    border:0;
+    background:var(--glass);
+    color:#fff;
+    outline:none;
+    box-shadow:0 6px 22px rgba(0,0,0,0.6), 0 0 12px rgba(29,185,84,0.06);
+    font-size:15px;
+    backdrop-filter: blur(8px);
+  }
+
+  .results {
+    width:100%;
+    border-radius:12px;
+    background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+    padding:6px;
+    max-height: calc(100% - 120px);
+    overflow:auto;
+    box-shadow: 0 8px 28px rgba(0,0,0,0.6);
+    display:none;
+  }
+  .results.active { display:block; }
+
+  .result-item {
+    display:flex;
+    gap:12px;
+    align-items:center;
+    padding:10px;
+    border-radius:10px;
+    cursor:pointer;
+    transition:background .18s ease, transform .12s ease;
+  }
+  .result-item:hover { background: rgba(29,185,84,0.08); transform: translateY(-2px); }
+  .result-img img { width:56px; height:56px; border-radius:10px; object-fit:cover; }
+  .result-meta { min-width:0; }
+  .result-title { font-weight:600; font-size:14px; white-space:nowrap; text-overflow:ellipsis; overflow:hidden; }
+  .result-sub { font-size:13px; opacity:0.75; margin-top:4px; white-space:nowrap; text-overflow:ellipsis; overflow:hidden; }
+
+  /* Right column: player */
+  .right {
+    flex:1;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+
+  .player {
+    width:100%;
+    max-width:520px;
+    padding:22px;
+    border-radius:20px;
+    background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.02));
+    box-shadow: 0 18px 60px rgba(0,0,0,0.7);
+    backdrop-filter: blur(18px);
+    display:flex;
+    flex-direction:column;
+    gap:14px;
+    align-items:center;
+  }
+
+  .album {
+    width:100%;
+    max-width:420px;
+    border-radius:16px;
+    overflow:hidden;
+    box-shadow: 0 10px 36px rgba(0,0,0,0.6);
+  }
+  .album img { width:100%; display:block; height: auto; aspect-ratio:1/1; object-fit:cover; }
+
+  .info { width:100%; text-align:center; }
+  #title { font-size:18px; font-weight:700; margin-bottom:6px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  #artist { font-size:14px; opacity:0.85; }
+
+  .seek-row { width:100%; display:flex; gap:8px; align-items:center; }
+  #seek { -webkit-appearance:none; appearance:none; width:100%; height:8px; border-radius:6px; background: rgba(255,255,255,0.12); outline:none; }
+  #seek::-webkit-slider-thumb { -webkit-appearance:none; width:14px; height:14px; border-radius:50%; background:var(--accent); box-shadow: 0 4px 10px rgba(29,185,84,0.25); cursor:pointer; }
+
+  .times { font-size:12px; opacity:0.7; width:64px; text-align:center; }
+
+  .controls {
+    width:100%;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:6px;
+  }
+  .control-left, .control-right { display:flex; gap:10px; align-items:center; }
+  .btn {
+    background:transparent; border:0; color:#fff; font-size:20px; cursor:pointer; padding:8px;border-radius:8px;
+    transition: transform .12s ease, background .12s ease;
+  }
+  .btn:hover { transform: translateY(-3px); color:var(--accent); background: rgba(29,185,84,0.04); }
+
+  .big {
+    font-size:24px; padding:12px;
+  }
+
+  /* lyrics box */
+  .lyrics {
+    width:100%;
+    max-height:220px;
+    overflow:auto;
+    border-radius:12px;
+    background:var(--glass-2);
+    padding:12px;
+    display:none;
+  }
+  .lyrics.active { display:block; }
+  .lyric-line { padding:6px 0; opacity:0.65; transition: all .18s ease; }
+  .lyric-line.active { color:var(--accent); opacity:1; font-weight:600; }
+
+  /* small helpers */
+  .muted { color:#aaa !important; }
+  .hidden-iframe { width:0; height:0; position:absolute; left:-9999px; top:-9999px; }
+
+  /* responsive */
+  @media (max-width:820px){
+    .app { flex-direction:column; align-items:center; gap:14px; height:calc(100vh - 18px); }
+    .left { width:92%; }
+    .right { width:92%; }
+  }
+</style>
+</head>
+<body>
+
+<div class="app" id="app">
+  <div class="left">
+    <input id="search" class="search" placeholder="Search music (iTunes) — try: 'Kendrick Lamar Humble'">
+    <div id="results" class="results" role="list"></div>
+  </div>
+
+  <div class="right">
+    <div class="player" id="playerCard">
+      <div class="album" id="albumWrap"><img id="albumImg" src="" alt="Album art" crossorigin="anonymous"></div>
+
+      <div class="info">
+        <div id="title">Not Playing</div>
+        <div id="artist">Search & select a track</div>
+      </div>
+
+      <div class="seek-row">
+        <div class="times" id="timeCurrent">0:00</div>
+        <input id="seek" type="range" min="0" max="100" value="0">
+        <div class="times" id="timeDuration">0:00</div>
+      </div>
+
+      <div class="controls">
+        <div class="control-left">
+          <button class="btn" id="prevBtn" title="Previous"><i class="fa-solid fa-backward"></i></button>
+          <button class="btn big" id="playBtn" title="Play/Pause"><i class="fa-solid fa-play"></i></button>
+          <button class="btn" id="nextBtn" title="Next"><i class="fa-solid fa-forward"></i></button>
+          <button class="btn" id="repeatBtn" title="Repeat"><i class="fa-solid fa-repeat"></i></button>
+        </div>
+
+        <div class="control-right">
+
+          <button class="btn" id="muteBtn" title="Mute/Unmute"><i class="fa-solid fa-volume-high"></i></button>
+        </div>
+      </div>
+
+      <div id="lyrics" class="lyrics" aria-live="polite"></div>
+
+      <!-- hidden YT player container -->
+      <div id="ytPlayer" class="hidden-iframe" aria-hidden="true"></div>
+    </div>
+  </div>
+</div>
+
+<!-- external little libs -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/color-thief/2.3.2/color-thief.umd.js"></script>
+
+<script>
+
+const YT_API_KEY = "AIzaSyAf62uxazE_nFYZhq1St7jPjSL9l7-mzV8"; 
+
+/* --------------- Elements --------------- */
+const searchInput = document.getElementById('search');
+const resultsEl = document.getElementById('results');
+
+const albumImg = document.getElementById('albumImg');
+const titleEl = document.getElementById('title');
+const artistEl = document.getElementById('artist');
+
+const playBtn = document.getElementById('playBtn');
+const prevBtn = document.getElementById('prevBtn');
+const nextBtn = document.getElementById('nextBtn');
+const repeatBtn = document.getElementById('repeatBtn');
+const muteBtn = document.getElementById('muteBtn');
+const lyricsBtn = document.getElementById('lyricsBtn');
+
+const seek = document.getElementById('seek');
+const timeCurrent = document.getElementById('timeCurrent');
+const timeDuration = document.getElementById('timeDuration');
+const lyricsBox = document.getElementById('lyrics');
+
+let colorThief = new ColorThief();
+
+
+let ytPlayer = null;
+let ytReady = false;
+let isPlaying = false;
+let isMuted = false;
+let isRepeat = false;
+let tracks = []; 
+let currentIndex = -1;
+let progressTimer = null;
+let lyricsSyncTimer = null;
+let lyricsLines = []; // [{time,text,el}]
+
+
+function secToMMSS(s){
+  s = Math.max(0, Math.floor(s||0));
+  const m = Math.floor(s/60);
+  const sec = s%60;
+  return `${m}:${sec.toString().padStart(2,'0')}`;
+}
+
+
+(function loadYouTubeAPI(){
+  if (window.YT && window.YT.Player){ initYT(); return; }
+  const tag = document.createElement('script');
+  tag.src = "https://www.youtube.com/iframe_api";
+  const firstScript = document.getElementsByTagName('script')[0];
+  firstScript.parentNode.insertBefore(tag, firstScript);
+})();
+
+function initYT(){
+  ytPlayer = new YT.Player('ytPlayer', {
+    height: '0', width: '0',
+    host: 'https://www.youtube-nocookie.com',
+    playerVars: { playsinline: 1, modestbranding: 1, rel: 0 },
+    events: {
+      onReady: () => { ytReady = true; console.log('YT ready'); },
+      onStateChange: onYTStateChange
+    }
+  });
+}
+
+
+function onYouTubeIframeAPIReady(){ initYT(); }
+
+function onYTStateChange(e){
+  const state = e.data;
+
+  if (state === YT.PlayerState.ENDED){
+    if (isRepeat) { ytPlayer.playVideo(); }
+    else nextTrack();
+  } else if (state === YT.PlayerState.PLAYING){
+    isPlaying = true; playBtn.innerHTML = '<i class="fa-solid fa-pause"></i>';
+  } else if (state === YT.PlayerState.PAUSED){
+    isPlaying = false; playBtn.innerHTML = '<i class="fa-solid fa-play"></i>';
+  }
+}
+
+
+let searchTimeout = null;
+searchInput.addEventListener('input', () => {
+  clearTimeout(searchTimeout);
+  searchTimeout = setTimeout(()=> {
+    const q = searchInput.value.trim();
+    if (q.length > 1) doITunesSearch(q);
+    else hideResults();
+  }, 420);
+});
+searchInput.addEventListener('keypress', (e) => {
+  if (e.key === 'Enter'){
+    clearTimeout(searchTimeout);
+    const q = searchInput.value.trim();
+    if (q.length > 1) doITunesSearch(q);
+  }
+});
+
+function doITunesSearch(query){
+  resultsEl.innerHTML = `<div style="padding:12px;opacity:.85">Searching iTunes…</div>`;
+  resultsEl.classList.add('active');
+  tracks = [];
+  currentIndex = -1;
+
+  const url = `https://itunes.apple.com/search?term=${encodeURIComponent(query)}&media=music&limit=12`;
+  fetch(url).then(r=>r.json()).then(data=>{
+    if (!data.results || data.results.length === 0){
+      resultsEl.innerHTML = `<div style="padding:12px;opacity:.8">No results</div>`;
+      return;
+    }
+    resultsEl.innerHTML = '';
+    data.results.forEach((it,i) => {
+      const item = { trackName: it.trackName, artistName: it.artistName, artworkUrl100: it.artworkUrl100, collectionName: it.collectionName };
+      tracks.push(item);
+      const div = document.createElement('div');
+      div.className = 'result-item';
+      div.innerHTML = `<div class="result-img"><img crossorigin="anonymous" src="${it.artworkUrl100}"></div>
+                       <div class="result-meta">
+                         <div class="result-title">${escapeHtml(it.trackName)}</div>
+                         <div class="result-sub">${escapeHtml(it.artistName)}</div>
+                       </div>`;
+      div.onclick = () => selectResult(i);
+      resultsEl.appendChild(div);
+    });
+  }).catch(err=>{
+    console.error('iTunes fetch failed', err);
+    resultsEl.innerHTML = `<div style="padding:12px;opacity:.8">Search failed</div>`;
+  });
+}
+function hideResults(){ resultsEl.classList.remove('active'); resultsEl.innerHTML=''; }
+
+
+async function selectResult(index){
+  if (!tracks[index]) return;
+  currentIndex = index;
+  const t = tracks[index];
+
+  titleEl.textContent = t.trackName || 'Unknown';
+  artistEl.textContent = t.artistName || '';
+  albumImg.crossOrigin = "anonymous";
+  albumImg.src = t.artworkUrl100 || '';
+
+  // clear lyrics & previous sync
+  clearLyrics();
+
+  // Try to extract color (might fail due to CORS)
+  albumImg.onload = () => {
+    try {
+      const color = colorThief.getColor(albumImg);
+      applyAccent(color);
+    } catch (e) {
+      // fail silently
+    }
+  };
+
+
+  if (t.youtubeId){
+    loadTrackByVideoId(t.youtubeId);
+  } else {
+
+    const q = `${t.trackName} ${t.artistName}`;
+    try {
+      const vid = await findYouTubeVideoId(q);
+      if (vid){
+        tracks[index].youtubeId = vid; // cache it
+        loadTrackByVideoId(vid);
+      } else {
+        alert('Could not find a matching YouTube video for this track.');
+      }
+    } catch(err){
+      console.error('YouTube lookup failed', err);
+      alert('YouTube lookup failed. Check console for details.');
+    }
+  }
+  hideResults();
+  searchInput.value = '';
+}
+
+
+async function findYouTubeVideoId(query){
+  // Safe guard
+  if (!YT_API_KEY) throw new Error('Missing YouTube API key.');
+  const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&maxResults=1&q=${encodeURIComponent(query) + '+official+audio' }&key=${YT_API_KEY}`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error('YouTube API error');
+  const json = await res.json();
+  if (json.items && json.items.length) return json.items[0].id.videoId;
+  return null;
+}
+
+
+function loadTrackByVideoId(videoId){
+  // Wait until YT player ready
+  const wait = async () => {
+    if (!ytReady || !ytPlayer) {
+      await new Promise(r => setTimeout(r, 150));
+      return wait();
+    }
+    // load and play
+    try {
+      ytPlayer.loadVideoById(videoId);
+      ytPlayer.playVideo();
+      // start progress timer
+      startProgressTimer();
+    } catch (e) {
+      console.error('YT load failed', e);
+    }
+  };
+  wait();
+}
+
+function prevTrack(){
+  if (tracks.length === 0) return;
+  currentIndex = (currentIndex - 1 + tracks.length) % tracks.length;
+  selectResult(currentIndex);
+}
+function nextTrack(){
+  if (tracks.length === 0) return;
+  currentIndex = (currentIndex + 1) % tracks.length;
+
+  selectResult(currentIndex);
+}
+
+
+function startProgressTimer(){
+  if (progressTimer) clearInterval(progressTimer);
+  progressTimer = setInterval(()=>{
+    if (!ytPlayer || !ytReady) return;
+    const dur = ytPlayer.getDuration ? ytPlayer.getDuration() : 0;
+    const cur = ytPlayer.getCurrentTime ? ytPlayer.getCurrentTime() : 0;
+    if (!isFinite(dur) || dur === 0) {
+      seek.value = 0;
+      timeCurrent.textContent = "0:00";
+      timeDuration.textContent = "0:00";
+      return;
+    }
+    const pct = (cur/dur) * 100;
+    seek.value = isFinite(pct) ? pct : 0;
+    timeCurrent.textContent = secToMMSS(cur);
+    timeDuration.textContent = secToMMSS(dur);
+
+    // lyrics sync tick
+    lyricsTick(cur);
+  }, 400);
+}
+
+/* seek input */
+let userSeeking = false;
+seek.addEventListener('input', () => {
+  userSeeking = true;
+});
+seek.addEventListener('change', () => {
+  if (!ytPlayer || !ytReady) { userSeeking = false; return; }
+  const dur = ytPlayer.getDuration ? ytPlayer.getDuration() : 0;
+  const newTime = dur * (seek.value/100);
+  ytPlayer.seekTo(newTime, true);
+  userSeeking = false;
+});
+
+
+playBtn.addEventListener('click', () => {
+  if (!ytPlayer || !ytReady) return;
+  const state = ytPlayer.getPlayerState();
+  if (state === YT.PlayerState.PLAYING) ytPlayer.pauseVideo();
+  else ytPlayer.playVideo();
+});
+prevBtn.addEventListener('click', prevTrack);
+nextBtn.addEventListener('click', nextTrack);
+
+repeatBtn.addEventListener('click', () => {
+  isRepeat = !isRepeat;
+  repeatBtn.classList.toggle('active', isRepeat);
+  repeatBtn.style.color = isRepeat ? getComputedStyle(document.documentElement).getPropertyValue('--accent') : '';
+});
+
+muteBtn.addEventListener('click', () => {
+  if (!ytPlayer || !ytReady) return;
+  if (isMuted){
+    ytPlayer.unMute(); isMuted=false;
+    muteBtn.innerHTML = '<i class="fa-solid fa-volume-high"></i>';
+  } else {
+    ytPlayer.mute(); isMuted=true;
+    muteBtn.innerHTML = '<i class="fa-solid fa-volume-xmark"></i>';
+  }
+});
+
+
+lyricsBtn.addEventListener('click', toggleLyrics);
+document.addEventListener('keydown', (e)=> { if (e.key.toLowerCase() === 't') toggleLyrics(); });
+
+let showingLyrics = false;
+let currentTrackMeta = { title:'', artist:'' };
+
+function toggleLyrics(){
+  showingLyrics = !showingLyrics;
+  if (showingLyrics){
+    lyricsBox.classList.add('active');
+    lyricsBtn.style.color = getComputedStyle(document.documentElement).getPropertyValue('--accent');
+    // if we have a loaded track, fetch its lyrics
+    const t = currentTrackMeta;
+    if (t.title && t.artist) fetchLyrics(t.artist, t.title);
+  } else {
+    lyricsBox.classList.remove('active');
+    lyricsBtn.style.color = '';
+    clearLyrics();
+  }
+}
+function clearLyrics(){
+  lyricsBox.innerHTML = '';
+  lyricsLines = [];
+  if (lyricsSyncTimer) { clearInterval(lyricsSyncTimer); lyricsSyncTimer = null; }
+}
+
+/* fetch lyrics from lrclib (best-effort) */
+async function fetchLyrics(artist, title){
+  if (!artist || !title) { lyricsBox.innerHTML = '<div style="opacity:.8">No track selected</div>'; return; }
+  lyricsBox.innerHTML = '<div style="opacity:.9">Loading lyrics…</div>';
+  const cleanA = encodeURIComponent(artist.trim());
+  const cleanT = encodeURIComponent(title.trim());
+  try {
+    const res = await fetch(`https://lrclib.net/api/get?artist_name=${cleanA}&track_name=${cleanT}`);
+    if (!res.ok) throw new Error('Lyrics API returned no data');
+    const json = await res.json();
+    if (json.syncedLyrics){
+      // parse lines like [mm:ss.xx]text
+      const rawLines = json.syncedLyrics.trim().split('\n').map(l=>l.trim()).filter(Boolean);
+      const parsed = rawLines.map(l => {
+        const m = l.match(/^\[(\d+):(\d+(?:\.\d+)?)\](.*)$/);
+        if (!m) return null;
+        return { time: parseInt(m[1])*60 + parseFloat(m[2]), text: m[3].trim() };
+      }).filter(Boolean);
+      if (parsed.length === 0) { lyricsBox.innerHTML = '<div style="opacity:.8">No synced lyrics found.</div>'; return; }
+      // render
+      lyricsBox.innerHTML = '';
+      lyricsLines = parsed.map((ln, idx) => {
+        const el = document.createElement('div');
+        el.className = 'lyric-line';
+        el.id = `lyric-${idx}`;
+        el.dataset.time = ln.time;
+        el.textContent = ln.text;
+        lyricsBox.appendChild(el);
+        return { time: ln.time, el };
+      });
+      // start sync timer
+      if (lyricsSyncTimer) clearInterval(lyricsSyncTimer);
+      lyricsSyncTimer = setInterval(()=> {
+        const now = ytPlayer && ytReady && ytPlayer.getCurrentTime ? ytPlayer.getCurrentTime() : 0;
+        lyricsTick(now);
+      }, 300);
+    } else if (json.lyrics){
+      lyricsBox.innerHTML = `<div style="white-space:pre-wrap">${escapeHtml(json.lyrics)}</div>`;
+    } else {
+      lyricsBox.innerHTML = '<div style="opacity:.85">No lyrics available.</div>';
+    }
+  } catch (err){
+    console.error('Lyrics fetch failed', err);
+    lyricsBox.innerHTML = '<div style="opacity:.85">Lyrics unavailable.</div>';
+  }
+}
+
+/* sync function called from progress timer and lyrics timer */
+function lyricsTick(currentTime){
+  if (!lyricsLines || lyricsLines.length === 0) return;
+  let activeIndex = -1;
+  for (let i=0;i<lyricsLines.length;i++){
+    if (currentTime >= lyricsLines[i].time) activeIndex = i;
+    else break;
+  }
+  // update DOM classes
+  lyricsLines.forEach((ln,i)=>{
+    ln.el.classList.toggle('active', i === activeIndex);
+    if (i === activeIndex){
+      // scroll into view smoothly
+      ln.el.scrollIntoView({ block:'center', behavior:'smooth' });
+    }
+  });
+}
+
+function escapeHtml(s){
+  return String(s||'').replace(/[&<>"']/g, function(m){
+    return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[m];
+  });
+}
+
+
+function applyAccent(rgbArr){
+  if (!rgbArr || rgbArr.length<3) return;
+  const [r,g,b] = rgbArr;
+  // apply subtle shadow & accent to seek bar
+  document.documentElement.style.setProperty('--accent', `rgb(${r}, ${g}, ${b})`);
+  // update seek gradient
+  seek.style.background = `linear-gradient(90deg, rgb(${r},${g},${b}) ${seek.value}%, rgba(255,255,255,0.12) ${seek.value}%)`;
+}
+
+
+function setCurrentTrackMeta(track){
+  currentTrackMeta.title = track.trackName || '';
+  currentTrackMeta.artist = track.artistName || '';
+}
+
+
+window.addEventListener('beforeunload', ()=> {
+  if (progressTimer) clearInterval(progressTimer);
+  if (lyricsSyncTimer) clearInterval(lyricsSyncTimer);
+});
+
+
+/* small wrapper to set meta when loadTrackByVideoId is called */
+const originalLoadTrackByVideoId = loadTrackByVideoId;
+loadTrackByVideoId = function(videoId){
+  if (currentIndex >= 0 && tracks[currentIndex]) setCurrentTrackMeta(tracks[currentIndex]);
+  originalLoadTrackByVideoId(videoId);
+  // try to fetch lyrics automatically if lyrics view is open
+  if (showingLyrics && currentTrackMeta.title && currentTrackMeta.artist) fetchLyrics(currentTrackMeta.artist, currentTrackMeta.title);
+};
+
+
+(function initialHint(){
+  // small placeholder art
+  albumImg.src = "data:image/svg+xml;utf8," + encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='600' height='600'><rect width='100%' height='100%' fill='#0c0c0c'/><text x='50%' y='50%' fill='#7b7b7b' font-size='28' text-anchor='middle' font-family='Poppins,Arial'>Latte Music</text></svg>`);
+})();
+
+</script>
+</body>
+</html>

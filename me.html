@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Welcome to Latte Network</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@600&display=swap');
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    background: url('/latte.png') no-repeat center center fixed;
+    background-size: cover;
+    font-family: 'Inter', sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .glass-wrapper {
+    position: relative;
+    max-width: 420px;
+    width: 90vw;
+    padding: 3rem 4rem;
+    text-align: center;
+    background: rgba(255, 240, 245, 0.35);
+    border-radius: 30px;
+    border: 1.5px solid rgba(255, 182, 193, 0.4);
+    box-shadow: 0 8px 32px rgba(255, 182, 193, 0.25);
+    backdrop-filter: blur(25px);
+    -webkit-backdrop-filter: blur(25px);
+    color: #000;
+    user-select: none;
+    overflow: hidden;
+  }
+
+  h1 {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+  }
+
+  p {
+    font-size: 1.3rem;
+    margin: 0;
+  }
+
+  .petals {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    overflow: visible;
+    z-index: 0;
+  }
+
+  .petal {
+    position: absolute;
+    width: 14px;
+    height: 14px;
+    background: radial-gradient(circle, #f9c1d9 60%, transparent 80%);
+    border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+    opacity: 0.8;
+    animation-name: fall;
+    animation-timing-function: ease-in-out;
+    animation-iteration-count: infinite;
+    z-index: 0;
+  }
+
+  @keyframes fall {
+    0% {
+      transform: translateY(-50px) rotate(0deg) scale(0.8);
+      opacity: 0.7;
+    }
+    25% {
+      transform: translateY(25%) rotate(90deg) translateX(10px) scale(0.9);
+      opacity: 0.75;
+    }
+    50% {
+      transform: translateY(50%) rotate(180deg) translateX(-10px) scale(1);
+      opacity: 0.8;
+    }
+    75% {
+      transform: translateY(75%) rotate(270deg) translateX(5px) scale(1.1);
+      opacity: 0.6;
+    }
+    100% {
+      transform: translateY(150%) rotate(360deg) translateX(0px) scale(1.2);
+      opacity: 0;
+    }
+  }
+</style>
+</head>
+<body>
+
+  <div class="glass-wrapper" role="main" aria-label="Welcome message">
+    <h1>Welcome to Latte Network</h1>
+    <p>I hate School 😒</p>
+
+    
+
+</body>
+</html>

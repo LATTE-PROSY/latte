@@ -1,0 +1,265 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Friendly Persistent Announcement (Safe)</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <style>
+    :root {
+      --bg: #0f1724;
+      --panel: #0b1220;
+      --accent: #6ee7b7;
+      --muted: #94a3b8;
+    }
+    html,body {height:100%;margin:0;font-family:Inter,Segoe UI,system-ui,Arial;background:var(--bg);color:#e6eef6}
+    .app {height:100%;display:flex;flex-direction:column;}
+    header {
+      height:54px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      padding:0 12px;
+      background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+      border-bottom:1px solid rgba(255,255,255,0.03);
+    }
+    header .left {display:flex;gap:12px;align-items:center}
+    button {
+      background:var(--accent);
+      border:none;
+      padding:8px 12px;
+      border-radius:8px;
+      cursor:pointer;
+      font-weight:600;
+    }
+    .controls button.secondary {
+      background:transparent;
+      border:1px solid rgba(255,255,255,0.06);
+      color:var(--muted);
+    }
+    /* iframe fills space */
+    .main {flex:1;position:relative;overflow:hidden}
+    iframe {width:100%;height:100%;border:none;display:block}
+
+    /* Announcement banner (top-right) */
+    .announce {
+      position:fixed;
+      right:16px;
+      top:76px;
+      max-width:320px;
+      background:linear-gradient(180deg,#112034,#0e1a2a);
+      border-radius:12px;
+      padding:12px;
+      box-shadow:0 10px 30px rgba(2,6,23,0.6);
+      z-index:9999;
+      display:none;
+      color:#e6f6ee;
+      border:1px solid rgba(255,255,255,0.04);
+    }
+    .announce h4 {margin:0 0 6px;font-size:15px}
+    .announce p {margin:0 0 8px;color:var(--muted);font-size:13px}
+    .announce .row {display:flex;gap:8px;justify-content:flex-end}
+
+    /* Big modal (optional) */
+    .modal-backdrop{
+      position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,0.6);z-index:10000;
+    }
+    .modal{background:var(--panel);padding:20px;border-radius:12px;max-width:720px;width:92%;box-shadow:0 12px 40px rgba(0,0,0,0.6)}
+    .small-note {font-size:13px;color:var(--muted);margin-top:8px}
+
+    /* small helper */
+    .muted {color:var(--muted);font-size:13px}
+  </style>
+</head>
+<body>
+  <div class="app" role="application" aria-label="Persistent announcement demo">
+    <header>
+      <div class="left">
+        <strong>Iframe page</strong>
+        <span class="muted">— main content is an iframe</span>
+      </div>
+      <div class="controls">
+        <button id="toggle-repeat">Disable repeating</button>
+        <button class="secondary" id="disable-beforeunload">Disable leave warning</button>
+      </div>
+    </header>
+
+    <div class="main" id="main">
+      <!-- Main iframe — replace src with your target -->
+      <iframe id="main-frame" src="/chat" title="Main content"></iframe>
+    </div>
+
+    <!-- Repeating announcement banner -->
+    <div id="announce" class="announce" role="status" aria-live="polite">
+      <h4>Wait — are you sure?</h4>
+      <p>This page reminds you before leaving. If you want to keep working, click "Stay".</p>
+      <div class="row">
+        <button id="announce-stay">Stay</button>
+        <button id="announce-hide" class="secondary">Dismiss</button>
+      </div>
+    </div>
+
+    <!-- Big modal (when user clicks Stay) -->
+    <div id="modal-backdrop" class="modal-backdrop" aria-hidden="true">
+      <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+        <h3 id="modal-title">Thanks for staying</h3>
+        <p class="small-note">You can disable the repeating reminder or the browser leave warning using the header controls.</p>
+        <div style="margin-top:12px;text-align:right">
+          <button id="modal-close">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /*******************************
+     * Safe behaviour (not hijacking)
+     *
+     * - beforeunload: standard single browser confirmation (allowed).
+     * - repeating in-page announcement: visual + optional speechSynthesis,
+     *   displays repeatedly while user is on page until they disable it.
+     *
+     * Browsers will always allow the user to close the tab — we do NOT
+     * provide any method to bypass or repeatedly trigger browser-level
+     * close confirmations.
+     *******************************/
+
+    // ---------- beforeunload (single browser dialog) ----------
+    let warnOnLeave = true;
+    function beforeUnloadHandler(e) {
+      if (!warnOnLeave) return;
+      e.preventDefault();
+      e.returnValue = '';
+      return '';
+    }
+    window.addEventListener('beforeunload', beforeUnloadHandler);
+
+    // ---------- repeating announcement logic ----------
+    const announceEl = document.getElementById('announce');
+    const toggleBtn = document.getElementById('toggle-repeat');
+    const disableUnloadBtn = document.getElementById('disable-beforeunload');
+    const announceStayBtn = document.getElementById('announce-stay');
+    const announceHideBtn = document.getElementById('announce-hide');
+    const modalBackdrop = document.getElementById('modal-backdrop');
+    const modalClose = document.getElementById('modal-close');
+
+    let repeatingEnabled = true;
+    let announceInterval = null;
+    let speechEnabled = false; // toggles speech announcements
+
+    // showAnnouncement: shows banner and optionally speaks
+    function showAnnouncement() {
+      // If already visible, flash it (simple visual nudge)
+      if (announceEl.style.display === 'block') {
+        announceEl.animate([{ transform: 'translateY(-6px)' }, { transform: 'translateY(0)' }], { duration: 240 });
+        if (speechEnabled) speak("Are you sure you want to leave this tab?");
+        return;
+      }
+      announceEl.style.display = 'block';
+      announceEl.animate([{ opacity: 0, transform: 'translateY(-8px)' }, { opacity: 1, transform: 'translateY(0)' }], { duration: 220 });
+      if (speechEnabled) speak("Are you sure you want to leave this tab?");
+      // auto-hide after a short time if user doesn't interact
+      setTimeout(() => {
+        if (announceEl.style.display === 'block') announceEl.style.display = 'none';
+      }, 5000);
+    }
+
+    function startRepeatingAnnouncements(intervalMs = 6000) {
+      stopRepeatingAnnouncements();
+      announceInterval = setInterval(() => {
+        if (repeatingEnabled) showAnnouncement();
+      }, intervalMs);
+      // show one immediately
+      setTimeout(showAnnouncement, 600);
+    }
+    function stopRepeatingAnnouncements() {
+      if (announceInterval) {
+        clearInterval(announceInterval);
+        announceInterval = null;
+      }
+    }
+
+    // Basic speech helper using Web Speech API (optional; won't work in all browsers)
+    function speak(text) {
+      if (!('speechSynthesis' in window)) return;
+      try {
+        const utt = new SpeechSynthesisUtterance(text);
+        utt.lang = 'en-US';
+        // keep it short and quiet
+        utt.volume = 0.8;
+        utt.rate = 1.0;
+        window.speechSynthesis.cancel(); // avoid queue buildup
+        window.speechSynthesis.speak(utt);
+      } catch (e) {
+        // ignore if speech fails
+      }
+    }
+
+    // Controls
+    toggleBtn.addEventListener('click', () => {
+      repeatingEnabled = !repeatingEnabled;
+      if (repeatingEnabled) {
+        startRepeatingAnnouncements();
+        toggleBtn.textContent = 'Disable repeating';
+      } else {
+        stopRepeatingAnnouncements();
+        announceEl.style.display = 'none';
+        // stop speech synthesis queue if any
+        if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+        toggleBtn.textContent = 'Enable repeating';
+      }
+    });
+
+    disableUnloadBtn.addEventListener('click', () => {
+      warnOnLeave = false;
+      window.removeEventListener('beforeunload', beforeUnloadHandler);
+      disableUnloadBtn.textContent = 'Leave warning disabled';
+      disableUnloadBtn.disabled = true;
+    });
+
+    // Announcement actions
+    announceStayBtn.addEventListener('click', () => {
+      // Show a modal thanking/encouraging user to stay.
+      modalBackdrop.style.display = 'flex';
+      modalBackdrop.setAttribute('aria-hidden', 'false');
+    });
+    announceHideBtn.addEventListener('click', () => {
+      // hide and pause next immediate announcement
+      announceEl.style.display = 'none';
+    });
+
+    modalClose.addEventListener('click', () => {
+      modalBackdrop.style.display = 'none';
+      modalBackdrop.setAttribute('aria-hidden', 'true');
+    });
+
+    // Start repeating announcements on load:
+    startRepeatingAnnouncements(8000); // every 8s by default
+
+    // Accessibility: ensure pressing Escape hides announcement or modal
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        if (modalBackdrop.style.display === 'flex') {
+          modalBackdrop.style.display = 'none';
+          modalBackdrop.setAttribute('aria-hidden', 'true');
+        } else if (announceEl.style.display === 'block') {
+          announceEl.style.display = 'none';
+        }
+      }
+    });
+
+    // If user interacts with iframe focus, pause announcements briefly
+    const iframe = document.getElementById('main-frame');
+    iframe.addEventListener('focus', () => {
+      // temporarily silence repeating for 12s to avoid interrupting iframe interaction
+      const previous = repeatingEnabled;
+      repeatingEnabled = false;
+      setTimeout(() => repeatingEnabled = previous, 12000);
+    });
+
+    // Clean up speech on unload (polite)
+    window.addEventListener('unload', () => {
+      if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+    });
+  </script>
+</body>
+</html>

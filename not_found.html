@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>404 — Page not found</title>
+<style>
+  :root{
+    --bg1: #2a0b12;
+    --bg2: #420921;
+    --accent: #ff7ab6;
+    --accent-2: #ff4fa3;
+    --glass: rgba(255,255,255,0.04);
+    --glass-2: rgba(255,255,255,0.02);
+    --text: #ffeef6;
+    --muted: #ffb6d9;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%; margin:0}
+  body{
+    font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    background:
+      radial-gradient(900px 400px at 10% 20%, rgba(255,122,182,0.08), transparent 10%),
+      radial-gradient(800px 350px at 90% 80%, rgba(255,79,163,0.06), transparent 10%),
+      linear-gradient(180deg,var(--bg1), var(--bg2));
+    color: var(--text);
+    -webkit-font-smoothing: antialiased;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    height: 100vh;
+  }
+  main.card{
+    background: linear-gradient(180deg, var(--glass), var(--glass-2));
+    border-radius: 18px;
+    padding: clamp(20px,3.6vw,36px);
+    box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+    backdrop-filter: blur(8px) saturate(120%);
+    border: 1px solid rgba(255,255,255,0.03);
+    text-align: center;
+    width: min(600px, 90vw);
+  }
+  h2.big404 {
+    font-weight: 900;
+    font-size: clamp(56px, 12vw, 120px);
+    line-height: 0.9;
+    letter-spacing: -2px;
+    margin: 0;
+    position: relative;
+    color: transparent;
+    -webkit-text-stroke: 1px rgba(255,255,255,0.06);
+  }
+  h2.big404::before, h2.big404::after {
+    content: attr(data-text);
+    position: absolute;
+    inset: 0;
+    color: var(--text);
+    opacity: 0.98;
+  }
+  h2.big404::before {
+    left: 2px;
+    top: 0;
+    text-shadow: -6px 0 var(--accent);
+    mix-blend-mode: screen;
+    animation: glitch1 3s infinite;
+  }
+  h2.big404::after {
+    left: -2px;
+    top: 0;
+    text-shadow: 6px 0 var(--accent-2);
+    animation: glitch2 2.6s infinite;
+  }
+  @keyframes glitch1 {
+    0% { transform: translateX(0) }
+    10% { transform: translateX(-6px) }
+    20% { transform: translateX(0) }
+    30% { transform: translateX(-2px) }
+    100% { transform: translateX(0) }
+  }
+  @keyframes glitch2 {
+    0% { transform: translateX(0) }
+    15% { transform: translateX(6px) }
+    40% { transform: translateX(0) }
+    60% { transform: translateX(3px) }
+    100% { transform: translateX(0) }
+  }
+  .subtitle {
+    color: var(--muted);
+    margin-top: 6px;
+    font-weight: 600;
+    font-size: 18px;
+  }
+  footer {
+    position: absolute;
+    bottom: 18px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: var(--muted);
+    font-size: 13px;
+  }
+  footer a {
+    color: var(--accent);
+    text-decoration: none;
+    font-weight: 700;
+  }
+  @media (max-width: 480px) {
+    main.card {
+      width: 90vw;
+      padding: 20px;
+    }
+    h2.big404 {
+      font-size: clamp(40px, 20vw, 80px);
+    }
+    .subtitle {
+      font-size: 16px;
+    }
+  }
+</style>
+</head>
+<body>
+  <main class="card" role="main" aria-labelledby="title">
+    <h2 class="big404" id="title" data-text="404">404</h2>
+    <div class="subtitle">Page not found</div>
+  </main>
+  <footer>Need help? <a href="/contact">Contact support</a></footer>
+</body>
+</html>

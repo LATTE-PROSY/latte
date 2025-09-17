@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script src="/.nekoweb-api/static/site.js" type="text/javascript" defer></script>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Latte Search</title>
+  <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+  <style>
+    :root {
+      --bg: #f5f5f7;
+      --card: #ffffff;
+      --text: #1c1c1e;
+      --accent: #0078d7;
+      --accent-hover: #005a9e;
+      --radius: 12px;
+      --shadow: 0 4px 20px rgba(0,0,0,0.15);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; }
+    body {
+      font-family: 'Quicksand', system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial;
+      background: var(--bg);
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 32px;
+    }
+
+    .wrap { width: 100%; max-width: 700px; z-index: 1; padding: 20px; }
+
+    .card {
+      width: 100%;
+      border-radius: var(--radius);
+      background: var(--card);
+      padding: 30px;
+      box-shadow: var(--shadow);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .card:hover { transform: translateY(-3px); box-shadow: 0 8px 28px rgba(0,0,0,0.2); }
+
+    .top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; }
+
+    h1 { font-size: 1.5rem; font-weight: 700; }
+    p.lead { font-size: 0.95rem; color: #555; margin-top: 4px; }
+
+    form { display: flex; gap: 12px; margin-top: 16px; }
+
+    .input-wrap {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: #f0f0f2;
+      border-radius: var(--radius);
+      padding: 10px 14px;
+      border: 1px solid #d0d0d3;
+      transition: box-shadow 0.15s, border-color 0.15s;
+    }
+
+    .input-wrap:focus-within { border-color: var(--accent); box-shadow: 0 2px 12px rgba(0,0,0,0.1); }
+
+    .url-input { flex: 1; border: 0; outline: 0; background: transparent; font-size: 1rem; color: var(--text); padding: 6px 4px; }
+
+    .btn {
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      padding: 12px 18px;
+      border-radius: var(--radius);
+      cursor: pointer;
+      font-weight: 600;
+      transition: background 0.2s;
+    }
+
+    .btn:hover { background: var(--accent-hover); }
+    .btn:active { transform: translateY(1px); }
+
+    .secondary {
+      background: transparent;
+      border: 1px solid #ccc;
+      padding: 10px 14px;
+      border-radius: var(--radius);
+      cursor: pointer;
+      font-weight: 600;
+      transition: background 0.2s;
+    }
+
+    .secondary:hover { background: #eaeaea; }
+
+    .quick-row { margin-top: 20px; display: flex; gap: 10px; flex-wrap: wrap; }
+    .quick {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 12px;
+      border-radius: var(--radius);
+      background: #f5f5f7;
+      border: 1px solid #ddd;
+      cursor: pointer;
+      font-weight: 600;
+      transition: transform 0.12s, box-shadow 0.12s, background 0.15s;
+    }
+
+    .quick:hover { transform: translateY(-4px); box-shadow: 0 6px 18px rgba(0,0,0,0.15); background: #e8f1fc; }
+
+    .status { font-size: 0.9rem; color: #888; }
+
+    @media (max-width: 640px) {
+      h1 { font-size: 1.25rem; }
+      .quick { padding: 6px 10px; font-size: 0.9rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <section class="card" role="region" aria-label="Search panel">
+      <div class="top">
+        <div>
+          <h1>Latte Search</h1>
+          <p class="lead">Paste a URL or type a search and press Enter or Open.</p>
+        </div>
+        <div class="status" id="status">Ready</div>
+      </div>
+      <form id="navForm" autocomplete="off">
+        <div class="input-wrap">
+          <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+          <input id="query" class="url-input" type="search" placeholder="https://example.com or search terms" aria-label="Search or URL">
+        </div>
+        <button class="btn" type="submit"><i class="fa-solid fa-up-right-from-square"></i>Open</button>
+        <button class="secondary" id="clearBtn" type="button">Clear</button>
+      </form>
+      <div class="quick-row">
+        <button class="quick" data-url="https://www.youtube.com"><i class="fa-brands fa-youtube"></i>Youtube</button>
+        <button class="quick" data-url="https://now.gg"><i class="fa-solid fa-gamepad"></i>Now.gg</button>
+        <button class="quick" data-url="https://duckduckgo.com/"><i class="fa-solid fa-globe"></i>DuckDuckGo</button>
+        <button class="quick" data-url="https://www.reddit.com/"><i class="fa-brands fa-reddit"></i>Reddit</button>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    function go(url) { location.href = '/s/embed.html#' + url; }
+    const form = document.getElementById('navForm');
+    const input = document.getElementById('query');
+    const status = document.getElementById('status');
+    const quicks = document.querySelectorAll('.quick');
+    function looksLikeDomain(v){return /^[\w-]+(\.[\w-]+)+.*$/i.test(v);}
+    function hasProtocol(v){return /^(https?|file|ftp):\/\//i.test(v);}
+    function buildUrl(raw){const t=raw.trim(); if(!t) return null; if(hasProtocol(t)) return t; if(looksLikeDomain(t)) return 'https://'+t; return 'https://duckduckgo.com/search?q='+encodeURIComponent(t);}
+    form.addEventListener('submit', e=>{ e.preventDefault(); const url = buildUrl(input.value||''); if(!url) return; status.textContent='Opening…'; go(url); });
+    document.getElementById('clearBtn').addEventListener('click', ()=>{ input.value=''; input.focus(); status.textContent='Cleared'; setTimeout(()=>status.textContent='Ready',700); });
+    quicks.forEach(btn=>{ btn.addEventListener('click', ()=>go(btn.dataset.url)); });
+    input.addEventListener('keydown', e=>{ if(e.key==='Escape'){ input.value=''; status.textContent='Cleared'; setTimeout(()=>status.textContent='Ready',700); } });
+    window.addEventListener('keydown', e=>{ if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='k'){ e.preventDefault(); input.focus(); input.select(); } });
+  </script>
+</body>
+</html>

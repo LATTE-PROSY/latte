@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Brewza Settings</title>
+
+  <!-- TailwindCSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"/>
+  <!-- JS -->
+  <script src="/assets/settings.js" defer></script>
+
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      background: url('/latte.png') no-repeat center center fixed;
+      background-size: cover;
+    }
+    .glass {
+      background: rgba(255, 255, 255, 0.08);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+  </style>
+</head>
+<body class="h-screen flex items-center justify-center text-white">
+
+  <div class="glass p-8 rounded-2xl shadow-2xl w-96">
+    <h2 class="text-2xl font-bold mb-6 text-center flex items-center justify-center gap-2">
+      <i class="fa-solid fa-gear"></i> Settings
+    </h2>
+
+    <!-- Panic Key -->
+    <label for="panicKey" class="block mb-2 font-semibold">🔑 Panic Key</label>
+    <input type="text" id="panicKey" maxlength="1" placeholder="e.g. p"
+      class="w-full px-4 py-2 rounded-xl bg-white/10 text-white focus:outline-none focus:ring-2 focus:ring-pink-400 mb-4"/>
+
+    <!-- Panic URL -->
+    <label for="panicUrl" class="block mb-2 font-semibold">🌐 Panic URL</label>
+    <input type="text" id="panicUrl" placeholder="e.g. https://google.com"
+      class="w-full px-4 py-2 rounded-xl bg-white/10 text-white focus:outline-none focus:ring-2 focus:ring-pink-400 mb-6"/>
+
+    <!-- Buttons -->
+    <div class="space-y-3">
+      <button id="saveSettings"
+        class="w-full py-3 rounded-xl font-bold bg-pink-500 hover:bg-pink-600 transition flex items-center justify-center gap-2">
+        <i class="fa-solid fa-floppy-disk"></i> Save Settings
+      </button>
+
+      <button id="resetSettings"
+        class="w-full py-3 rounded-xl font-bold bg-gray-700 hover:bg-gray-800 transition flex items-center justify-center gap-2">
+        <i class="fa-solid fa-rotate-left"></i> Reset Defaults
+      </button>
+
+      <button id="testPanic"
+        class="w-full py-3 rounded-xl font-bold bg-blue-500 hover:bg-blue-600 transition flex items-center justify-center gap-2">
+        <i class="fa-solid fa-up-right-from-square"></i> Test Panic URL
+      </button>
+    </div>
+  </div>
+
+</body>
+</html>

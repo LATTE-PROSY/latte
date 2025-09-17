@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Simple Network Zipper</title>
+  <script src="/lib/jszip.js"></script>
+  <script>
+  function saveAs(blob, filename) {
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => {
+      URL.revokeObjectURL(a.href);
+      document.body.removeChild(a);
+    }, 1500);
+  }
+
+  async function downloadPage(){
+    const url = document.getElementById("pageUrl").value.trim();
+    if(!url){ alert("Enter a URL first"); return; }
+
+    try {
+      const res = await fetch(url);
+      if(!res.ok) throw new Error("HTTP "+res.status);
+      const html = await res.text();
+
+      const zip = new JSZip();
+      zip.file("index.html", html);
+
+      const out = await zip.generateAsync({type:"blob"});
+      saveAs(out, "page.zip");
+    } catch(e){
+      alert("Error fetching page: "+e);
+    }
+  }
+  </script>
+</head>
+<body>
+  <h2>Simple Network Zipper</h2>
+  <input type="url" id="pageUrl" placeholder="https://example.com" size="50">
+  <button onclick="downloadPage()">Download Page</button>
+</body>
+</html>

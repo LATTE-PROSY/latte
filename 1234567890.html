@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Custom Browser UI</title>
+<style>
+  body {
+    margin: 0;
+    font-family: 'Segoe UI', sans-serif;
+    background: #1b1f25;
+    color: #fff;
+    display: flex;
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  /* Sidebar */
+  .sidebar {
+    width: 60px;
+    background: #1a1d23;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding-top: 15px;
+    box-shadow: 2px 0 5px rgba(0,0,0,0.3);
+  }
+
+  .sidebar button {
+    background: none;
+    border: none;
+    margin: 15px 0;
+    color: #fff;
+    font-size: 26px;
+    cursor: pointer;
+    position: relative;
+    transition: transform 0.2s, color 0.2s;
+  }
+
+  .sidebar button:hover {
+    color: #1abc9c;
+    transform: scale(1.2);
+  }
+
+  .sidebar button .badge {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    background: #e74c3c;
+    border-radius: 50%;
+    font-size: 10px;
+    padding: 2px 5px;
+    font-weight: bold;
+  }
+
+  /* Main Content */
+  .main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Tab Bar */
+  .tab-bar {
+    display: flex;
+    align-items: center;
+    background: #2b2f36;
+    padding: 5px 10px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+  }
+
+  .tab {
+    padding: 10px 15px;
+    background: #2b2f36;
+    margin-right: 5px;
+    border-radius: 5px 5px 0 0;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    transition: background 0.2s;
+  }
+
+  .tab.active {
+    background: #3b3f48;
+    box-shadow: inset 0 -2px 0 #1abc9c;
+  }
+
+  .tab:hover {
+    background: #3b3f48;
+  }
+
+  .tab .close {
+    margin-left: 10px;
+    font-weight: bold;
+    cursor: pointer;
+    color: #e74c3c;
+    transition: color 0.2s;
+  }
+
+  .tab .close:hover {
+    color: #c0392b;
+  }
+
+  /* Search Bar */
+  .search-bar {
+    margin-left: auto;
+    padding: 5px 10px;
+    border-radius: 5px;
+    border: none;
+    outline: none;
+    flex: 1;
+    background: #1b1f25;
+    color: #fff;
+    transition: background 0.2s;
+  }
+
+  .search-bar:focus {
+    background: #2b2f36;
+  }
+
+  /* Tab Content */
+  .tab-content {
+    flex: 1;
+    background: #1b1f25;
+    padding: 20px;
+    overflow-y: auto;
+  }
+
+</style>
+</head>
+<body>
+
+<div class="sidebar">
+  <button>📧<span class="badge">99+</span></button>
+  <button>🎮</button>
+  <button>💬</button>
+  <button>🎥</button>
+  <button>🛠️</button>
+</div>
+
+<div class="main">
+  <div class="tab-bar">
+    <div class="tab active">Mail <span class="close">×</span></div>
+    <div class="tab">Meet <span class="close">×</span></div>
+    <input type="text" class="search-bar" placeholder="Search or enter URL">
+  </div>
+  <div class="tab-content">
+    <p>Content for the active tab goes here. Switch tabs to see different content.</p>
+  </div>
+</div>
+
+<script>
+const tabsContainer = document.querySelector('.tab-bar');
+const tabContent = document.querySelector('.tab-content');
+
+function setActiveTab(tab) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  tab.classList.add('active');
+  tabContent.innerHTML = `<p>Content for ${tab.textContent.replace('×','').trim()} tab.</p>`;
+}
+
+function addTabListeners(tab) {
+  tab.addEventListener('click', () => setActiveTab(tab));
+  tab.querySelector('.close').addEventListener('click', (e) => {
+    e.stopPropagation();
+    let wasActive = tab.classList.contains('active');
+    tab.remove();
+    if (wasActive) {
+      const nextTab = document.querySelector('.tab');
+      if (nextTab) setActiveTab(nextTab);
+    }
+  });
+}
+
+document.querySelectorAll('.tab').forEach(addTabListeners);
+</script>
+
+</body>
+</html>
